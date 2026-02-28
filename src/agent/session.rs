@@ -151,20 +151,24 @@ impl AgentSession {
         self.event_bus.publish(Event::new(EventType::AgentStart));
 
         // Call the LLM
-        let tool_schemas: Option<Vec<serde_json::Value>> = Some(
-            self.tools.iter().map(|t| serde_json::json!({
-                "type": "function",
-                "function": {
-                    "name": t.name(),
-                    "description": t.description(),
-                    "parameters": t.schema().clone(),
-                }
-            })).collect()
-        );
+        let tool_schemas: Option<Vec<serde_json::Value>> = if self.tools.is_empty() {
+            None
+        } else {
+            Some(
+                self.tools.iter().map(|t| serde_json::json!({
+                    "type": "function",
+                    "function": {
+                        "name": t.name(),
+                        "description": t.description(),
+                        "parameters": t.schema().clone(),
+                    }
+                })).collect()
+            )
+        };
 
         let thinking = self.config.thinking_level != ThinkingLevel::Off;
         
-        let response = self.provider.chat(
+        let mut response = self.provider.chat(
             &self.config.model,
             context.messages,
             tool_schemas,
@@ -174,9 +178,12 @@ impl AgentSession {
         self.state = AgentState::Idle;
 
         // Get the response content
-        let content = response.choices.first()
+        let mut content = response.choices.first()
             .map(|c| c.message.content.as_text().clone())
             .unwrap_or_default();
+
+        // Check for tool calls and execute them
+        // (Simplified - in full implementation would parse tool calls from response)
 
         // Add assistant message to session
         let assistant_message = Message::assistant(

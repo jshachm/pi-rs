@@ -14,13 +14,16 @@ mod providers;
 mod core;
 mod extensions;
 mod utils;
+mod agent;
 
 use cli::Args;
 use cli::interactive::InteractiveMode;
 use session::SessionManager;
-use tools::coding_tools;
-use tools::Tool;
+use tools::{coding_tools, Tool};
+use tools::ToolWrapper;
 use providers::ModelRegistry;
+use agent::AgentSession;
+use agent::session::AgentConfig;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -60,11 +63,64 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // Get provider and model from args
+    let provider_name = args.provider.unwrap_or_else(|| {
+        model_registry.list_providers().first().cloned().unwrap_or_else(|| "moonshot".to_string())
+    });
+    
+    let model_id = args.model.unwrap_or_else(|| {
+        model_registry.get_models_for_provider(&provider_name)
+            .and_then(|models| models.first().map(|m| m.id.clone()))
+            .unwrap_or_else(|| "moonshot-v1-8k".to_string())
+    });
+
+    // If there's a message, do a simple chat
+    if !args.message.is_empty() {
+        // Get provider
+        let provider = model_registry.get_provider(&provider_name)
+            .ok_or_else(|| format!("Provider not found: {}", provider_name))?;
+
+        // Get tools for the agent
+        let tools_arc: Vec<Arc<dyn tools::ToolTrait>> = coding_tools()
+            .into_iter()
+            .map(|t| Arc::new(ToolWrapper::from_tool(t)) as Arc<dyn tools::ToolTrait>)
+            .collect();
+
+        // Create agent config
+        let config = AgentConfig {
+            provider: provider_name.clone(),
+            model: model_id.clone(),
+            thinking_level: core::ThinkingLevel::Off,
+            cwd: cwd.clone(),
+            tools: vec!["read".to_string(), "write".to_string(), "bash".to_string()],
+        };
+
+        // Create agent session
+        let mut agent = AgentSession::new(
+            config,
+            session,
+            provider,
+            tools_arc,
+        );
+
+        // Send message and get response
+        println!("Sending to {}: {}", provider_name, args.message);
+        match agent.prompt(&args.message).await {
+            Ok(response) => {
+                println!("\n=== Response ===\n{}", response);
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+            }
+        }
+
+        return Ok(());
+    }
+
     // Get tools
     let tools: Vec<Tool> = if args.no_tools {
         vec![]
     } else if let Some(ref tools_str) = args.tools {
-        // Parse specific tools
         let tool_names: Vec<&str> = tools_str.split(',').map(|s| s.trim()).collect();
         let mut selected: Vec<Tool> = vec![];
         
@@ -85,27 +141,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         coding_tools()
     };
 
-    // Print mode
-    if args.print {
-        if !args.message.is_empty() {
-            println!("Print mode: {}", args.message);
-            // In a full implementation, would send to LLM and print response
-        }
-        return Ok(());
-    }
-
     // Interactive mode
     let mut interactive = InteractiveMode::new(
         session,
         model_registry,
         tools,
     );
-
-    // If there's an initial message, run it first
-    if !args.message.is_empty() {
-        // In a full implementation, would handle initial message
-        println!("Initial message: {}", args.message);
-    }
 
     // Run interactive loop
     interactive.run().await?;

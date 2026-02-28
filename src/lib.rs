@@ -13,6 +13,7 @@ pub mod extensions;
 pub mod agent;
 pub mod settings;
 pub mod auth;
+pub mod tui;
 
 pub use session::{SessionManager, SessionEntry};
 pub use tools::{Tool, ToolResult, ToolCall, ToolSchema, ToolTrait, coding_tools, coding_tools_arc, read_tool, write_tool, edit_tool, bash_tool, grep_tool, find_tool, ls_tool, get_tool_by_name};

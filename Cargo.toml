@@ -43,7 +43,7 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 
 # Terminal UI
-crossterm = "0.3"
+crossterm = "0.28"
 ratatui = "0.28"
 tokio-retry = "0.3"
 

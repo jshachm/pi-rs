@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use crate::core::Model;
-use crate::providers::{AnthropicProvider, GoogleProvider, OpenAIProvider, Provider};
+use crate::providers::{
+    AnthropicProvider, GoogleProvider, MoonshotProvider, OpenAIProvider, Provider,
+};
 
 /// Model registry
 pub struct ModelRegistry {
@@ -49,6 +51,16 @@ impl ModelRegistry {
                 self.register_provider(
                     "google",
                     Arc::new(GoogleProvider::new(key)) as Arc<dyn Provider>,
+                );
+            }
+        }
+
+        // Moonshot (Kimi)
+        if let Ok(key) = std::env::var("MOONSHOT_API_KEY") {
+            if !key.is_empty() {
+                self.register_provider(
+                    "moonshot",
+                    Arc::new(MoonshotProvider::new(key)) as Arc<dyn Provider>,
                 );
             }
         }
