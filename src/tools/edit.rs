@@ -4,7 +4,6 @@ use std::fs;
 use std::path::Path;
 
 use serde::Deserialize;
-use similar::TextDiff;
 
 use crate::core::errors::{PiError, Result};
 use crate::tools::{Tool, ToolResult, ToolSchema};

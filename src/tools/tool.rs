@@ -1,6 +1,6 @@
 //! Tool definitions
 
-use crate::core::errors::{PiError, Result};
+use crate::core::errors::Result;
 use serde::{Deserialize, Serialize};
 
 /// Tool parameter schema

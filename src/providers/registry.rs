@@ -5,7 +5,8 @@ use std::sync::{Arc, RwLock};
 
 use crate::core::Model;
 use crate::providers::{
-    AnthropicProvider, GoogleProvider, MoonshotProvider, OpenAIProvider, Provider,
+    AnthropicProvider, AzureProvider, GoogleProvider, GroqProvider, MistralProvider,
+    MoonshotProvider, OllamaProvider, OpenAIProvider, Provider,
 };
 
 /// Model registry
@@ -61,6 +62,55 @@ impl ModelRegistry {
                 self.register_provider(
                     "moonshot",
                     Arc::new(MoonshotProvider::new(key)) as Arc<dyn Provider>,
+                );
+            }
+        }
+
+        // Ollama (local models) - register if OLLAMA_BASE_URL is set
+        if let Ok(base_url) = std::env::var("OLLAMA_BASE_URL") {
+            if !base_url.is_empty() {
+                self.register_provider(
+                    "ollama",
+                    Arc::new(OllamaProvider::new(base_url)) as Arc<dyn Provider>,
+                );
+            }
+        } else {
+            // Try default URL
+            self.register_provider(
+                "ollama",
+                Arc::new(OllamaProvider::new("http://localhost:11434")) as Arc<dyn Provider>,
+            );
+        }
+
+        // Azure OpenAI
+        if let (Ok(key), Ok(endpoint)) = (
+            std::env::var("AZURE_OPENAI_API_KEY"),
+            std::env::var("AZURE_OPENAI_ENDPOINT"),
+        ) {
+            if !key.is_empty() && !endpoint.is_empty() {
+                self.register_provider(
+                    "azure",
+                    Arc::new(AzureProvider::new(key, endpoint)) as Arc<dyn Provider>,
+                );
+            }
+        }
+
+        // Mistral
+        if let Ok(key) = std::env::var("MISTRAL_API_KEY") {
+            if !key.is_empty() {
+                self.register_provider(
+                    "mistral",
+                    Arc::new(MistralProvider::new(key)) as Arc<dyn Provider>,
+                );
+            }
+        }
+
+        // Groq
+        if let Ok(key) = std::env::var("GROQ_API_KEY") {
+            if !key.is_empty() {
+                self.register_provider(
+                    "groq",
+                    Arc::new(GroqProvider::new(key)) as Arc<dyn Provider>,
                 );
             }
         }

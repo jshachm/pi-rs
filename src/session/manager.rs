@@ -26,7 +26,7 @@ fn generate_id(existing: &HashSet<String>) -> String {
 
 /// Compute the default session directory for a cwd
 fn get_default_session_dir(cwd: &str) -> PathBuf {
-    let safe_path = format!("--{}--", cwd.replace('/', "-").replace('\\', "-"));
+    let safe_path = format!("--{}--", cwd.replace(['/', '\\'], "-"));
     get_sessions_dir().join(&safe_path)
 }
 
@@ -113,7 +113,7 @@ impl SessionManager {
         self.flushed = false;
 
         if self.persist {
-            let file_timestamp = timestamp.replace(':', "-").replace('.', "-");
+            let file_timestamp = timestamp.replace([':', '.'], "-");
             self.session_file = Some(self.session_dir.join(format!(
                 "{}_{}.jsonl",
                 file_timestamp,
@@ -173,14 +173,12 @@ impl SessionManager {
         let reader = BufReader::new(file);
         let mut entries = Vec::new();
 
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                if line.trim().is_empty() {
-                    continue;
-                }
-                if let Ok(entry) = serde_json::from_str::<FileEntry>(&line) {
-                    entries.push(entry);
-                }
+        for line in reader.lines().flatten() {
+            if line.trim().is_empty() {
+                continue;
+            }
+            if let Ok(entry) = serde_json::from_str::<FileEntry>(&line) {
+                entries.push(entry);
             }
         }
 

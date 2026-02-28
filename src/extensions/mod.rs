@@ -1,14 +1,9 @@
-//! Extension system (placeholder)
+//! Extension system
 
-/// Extension system placeholder
-/// 
-/// In a full implementation, this would support:
-/// - Loading TypeScript extensions
-/// - Event system
-/// - Custom tools
-/// - Custom commands
-/// - UI components
-
+pub mod api;
+pub mod loader;
 pub mod types;
 
-pub use types::*;
+pub use api::ExtensionRuntime;
+pub use loader::ExtensionLoader;
+pub use types::{ExtensionInfo, ExtensionResult};

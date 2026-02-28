@@ -1,11 +1,10 @@
 //! Agent Session - Core agent logic
 
 use std::sync::Arc;
-use std::path::PathBuf;
 
 use crate::core::{Message, ThinkingLevel, Role};
 use crate::session::SessionManager;
-use crate::providers::{Provider, ModelRegistry};
+use crate::providers::{Provider, provider::ProviderResponse};
 use crate::tools::{ToolTrait, ToolResult};
 use crate::agent::events::{EventBus, Event, EventType, EventPayload};
 
@@ -150,7 +149,7 @@ impl AgentSession {
         self.state = AgentState::Thinking;
         self.event_bus.publish(Event::new(EventType::AgentStart));
 
-        // Call the LLM
+        // Build tool schemas
         let tool_schemas: Option<Vec<serde_json::Value>> = if self.tools.is_empty() {
             None
         } else {
@@ -168,38 +167,110 @@ impl AgentSession {
 
         let thinking = self.config.thinking_level != ThinkingLevel::Off;
         
-        let mut response = self.provider.chat(
+        // Call the LLM
+        let response = self.provider.chat(
             &self.config.model,
             context.messages,
-            tool_schemas,
+            tool_schemas.clone(),
             Some(thinking),
         ).await.map_err(|e| e.message)?;
 
-        self.state = AgentState::Idle;
+        // Process the response - handle tool calls in a loop
+        let final_content = self.process_response_loop(response, tool_schemas, thinking).await?;
 
-        // Get the response content
-        let mut content = response.choices.first()
-            .map(|c| c.message.content.as_text().clone())
-            .unwrap_or_default();
+        Ok(final_content)
+    }
 
-        // Check for tool calls and execute them
-        // (Simplified - in full implementation would parse tool calls from response)
+    /// Process LLM response with tool calling loop (iterative, not recursive)
+    async fn process_response_loop(
+        &mut self,
+        mut response: ProviderResponse,
+        tool_schemas: Option<Vec<serde_json::Value>>,
+        thinking: bool,
+    ) -> Result<String, String> {
+        loop {
+            let choice = response.choices.first()
+                .ok_or("No response choices")?;
 
-        // Add assistant message to session
-        let assistant_message = Message::assistant(
-            content.clone(),
-            Some(&self.config.provider),
-            Some(&self.config.model),
-        );
-        self.session.append_message(assistant_message);
+            let content = choice.message.content.as_text().clone();
+            let tool_calls = choice.message.tool_calls.clone();
 
-        self.event_bus.publish(Event::new(EventType::TurnEnd));
-        self.event_bus.publish(Event::new(EventType::AgentEnd));
+            // Check if there are tool calls to execute
+            if let Some(tool_calls) = tool_calls {
+                if !tool_calls.is_empty() {
+                    self.state = AgentState::WaitingForTool;
 
-        // Store current response
-        self.current_response = Some(content.clone());
+                    // Add assistant message with tool calls to session
+                    let assistant_message = Message::assistant_with_tools(
+                        content.clone(),
+                        tool_calls.clone(),
+                        Some(&self.config.provider),
+                        Some(&self.config.model),
+                    );
+                    self.session.append_message(assistant_message);
 
-        Ok(content)
+                    // Execute each tool call
+                    for tool_call in &tool_calls {
+                        self.state = AgentState::ExecutingTool;
+                        self.event_bus.publish(Event::new(EventType::ToolExecutionStart)
+                            .with_payload(EventPayload::ToolCall {
+                                tool_name: tool_call.name.clone(),
+                                args: tool_call.input.clone(),
+                            }));
+
+                        let tool = self.tools.iter()
+                            .find(|t| t.name() == tool_call.name)
+                            .ok_or_else(|| format!("Tool not found: {}", tool_call.name))?;
+
+                        let result = tool.execute(tool_call.input.clone(), &self.config.cwd)
+                            .map_err(|e| e.to_string())?;
+
+                        self.event_bus.publish(Event::new(EventType::ToolExecutionEnd)
+                            .with_payload(EventPayload::ToolResult {
+                                tool_name: tool_call.name.clone(),
+                                success: result.success,
+                            }));
+
+                        // Add tool result as message
+                        let tool_message = Message::tool_result(&tool_call.id, &result.content);
+                        self.session.append_message(tool_message);
+                    }
+
+                    // Continue conversation with tool results
+                    self.state = AgentState::Thinking;
+                    let context = self.session.build_session_context();
+                    
+                    response = self.provider.chat(
+                        &self.config.model,
+                        context.messages,
+                        tool_schemas.clone(),
+                        Some(thinking),
+                    ).await.map_err(|e| e.message)?;
+
+                    // Loop continues to check for more tool calls
+                    continue;
+                }
+            }
+
+            // No tool calls - return the content
+            self.state = AgentState::Idle;
+
+            // Add assistant message to session
+            let assistant_message = Message::assistant(
+                content.clone(),
+                Some(&self.config.provider),
+                Some(&self.config.model),
+            );
+            self.session.append_message(assistant_message);
+
+            self.event_bus.publish(Event::new(EventType::TurnEnd));
+            self.event_bus.publish(Event::new(EventType::AgentEnd));
+
+            // Store current response
+            self.current_response = Some(content.clone());
+
+            return Ok(content);
+        }
     }
 
     /// Execute a tool
@@ -258,10 +329,12 @@ impl AgentSession {
         let tool_message = Message {
             role: Role::Tool,
             content: crate::core::MessageContent::Text(tool_results.to_string()),
+            tool_call_id: None,
             provider: None,
             model: None,
             thinking: None,
             timestamp: Some(chrono::Utc::now().timestamp_millis()),
+            tool_calls: None,
         };
         self.session.append_message(tool_message);
 

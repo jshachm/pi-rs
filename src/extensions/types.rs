@@ -15,6 +15,12 @@ pub struct ExtensionAPI {
     // Placeholder for extension API
 }
 
+impl Default for ExtensionAPI {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExtensionAPI {
     pub fn new() -> Self {
         Self {}

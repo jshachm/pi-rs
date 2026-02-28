@@ -1,8 +1,6 @@
 //! Bash tool - executes shell commands
 
 use std::collections::HashMap;
-use std::io::Write;
-use std::path::Path;
 use std::process::{Command, Stdio};
 
 use serde::Deserialize;
@@ -72,7 +70,7 @@ fn execute_bash(
     timeout_ms: Option<u64>,
     env: Option<&HashMap<String, String>>,
 ) -> Result<ToolResult> {
-    let timeout = std::time::Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
+    let _timeout = std::time::Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
 
     // Determine shell
     let shell = if cfg!(target_os = "windows") {
@@ -125,7 +123,7 @@ fn execute_bash(
 
     if !stderr.is_empty() {
         if !result.is_empty() {
-            result.push_str("\n");
+            result.push('\n');
         }
         result.push_str("STDERR:\n");
         result.push_str(&stderr);

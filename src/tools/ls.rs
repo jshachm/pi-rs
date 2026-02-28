@@ -81,12 +81,10 @@ fn list_directory(path: &str, cwd: &str, show_all: bool, long: bool) -> Result<T
 
         if long {
             items.push(format_dir_entry(&entry_path, &file_name));
+        } else if entry_path.is_dir() {
+            items.push(format!("{}/", file_name));
         } else {
-            if entry_path.is_dir() {
-                items.push(format!("{}/", file_name));
-            } else {
-                items.push(file_name);
-            }
+            items.push(file_name);
         }
     }
 

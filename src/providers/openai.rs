@@ -101,10 +101,31 @@ impl Provider for OpenAIProvider {
                     Role::Tool => "tool",
                     Role::Custom => "user",
                 };
-                serde_json::json!({
+                let mut json = serde_json::json!({
                     "role": role,
                     "content": msg.content.as_text()
-                })
+                });
+                if msg.role == Role::Tool {
+                    if let Some(ref tool_call_id) = msg.tool_call_id {
+                        json["tool_call_id"] = serde_json::json!(tool_call_id);
+                    }
+                }
+                if msg.role == Role::Assistant {
+                    if let Some(ref tool_calls) = msg.tool_calls {
+                        let tc_json: Vec<serde_json::Value> = tool_calls.iter().map(|tc| {
+                            serde_json::json!({
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.name,
+                                    "arguments": tc.input.to_string()
+                                }
+                            })
+                        }).collect();
+                        json["tool_calls"] = serde_json::json!(tc_json);
+                    }
+                }
+                json
             })
             .collect();
 
@@ -141,9 +162,23 @@ impl Provider for OpenAIProvider {
 
         let content = choice.message.content.clone();
         
+        let tool_calls = choice.message.tool_calls.as_ref().map(|calls| {
+            calls.iter().map(|c| {
+                let input: serde_json::Value = serde_json::from_str(&c.function.arguments).unwrap_or_default();
+                crate::core::types::ToolUse {
+                    id: c.id.clone(),
+                    name: c.function.name.clone(),
+                    input,
+                }
+            }).collect()
+        });
+
+        let mut message = crate::core::Message::assistant(content, Some("openai"), Some(model));
+        message.tool_calls = tool_calls;
+        
         let choices = vec![ProviderChoice {
             index: choice.index,
-            message: crate::core::Message::assistant(content, Some("openai"), Some(model)),
+            message,
             finish_reason: choice.finish_reason.clone(),
         }];
 
@@ -196,6 +231,24 @@ struct OpenAIChoice {
 struct OpenAIMessage {
     role: String,
     content: String,
+    #[serde(default)]
+    tool_calls: Option<Vec<OpenAIToolCall>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenAIToolCall {
+    id: String,
+    #[serde(rename = "type")]
+    call_type: String,
+    function: OpenAIFunctionCall,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenAIFunctionCall {
+    name: String,
+    arguments: String,
 }
 
 #[derive(Debug, Deserialize)]

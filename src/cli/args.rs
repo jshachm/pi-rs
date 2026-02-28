@@ -1,6 +1,6 @@
 //! Command-line arguments
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(name = "pi")]

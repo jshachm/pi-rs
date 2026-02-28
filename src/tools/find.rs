@@ -1,6 +1,5 @@
 //! Find tool - finds files by name pattern
 
-use std::fs;
 use std::path::Path;
 
 use glob::Pattern;

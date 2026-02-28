@@ -122,7 +122,7 @@ impl EventBus {
         let mut listeners = self.listeners.write().unwrap();
         listeners
             .entry(event_type)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(listener);
     }
 
@@ -154,7 +154,7 @@ impl EventBus {
         }
 
         // Notify wildcard listeners
-        if let Some(wildcard_listeners) = listeners.get(&EventType::SessionStart) {
+        if let Some(_wildcard_listeners) = listeners.get(&EventType::SessionStart) {
             // For wildcard, we could use a special type
             // For now, just notify specific
         }

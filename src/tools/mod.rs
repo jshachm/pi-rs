@@ -13,7 +13,7 @@ pub mod read;
 pub mod tool;
 pub mod write;
 
-pub use tool::{Tool, ToolCall, ToolResult, ToolSchema, ToolTrait, ToolWrapper};
+pub use tool::{Tool, ToolResult, ToolSchema, ToolTrait, ToolWrapper};
 
 pub use bash::bash_tool;
 pub use edit::edit_tool;

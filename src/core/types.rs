@@ -128,6 +128,8 @@ pub struct Message {
     pub role: Role,
     pub content: MessageContent,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
@@ -135,6 +137,8 @@ pub struct Message {
     pub thinking: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<ToolUse>>,
 }
 
 impl Message {
@@ -142,10 +146,12 @@ impl Message {
         Self {
             role: Role::User,
             content: content.into(),
+            tool_call_id: None,
             provider: None,
             model: None,
             thinking: None,
             timestamp: Some(Utc::now().timestamp_millis()),
+            tool_calls: None,
         }
     }
 
@@ -157,10 +163,30 @@ impl Message {
         Self {
             role: Role::Assistant,
             content: content.into(),
+            tool_call_id: None,
             provider: provider.map(String::from),
             model: model.map(String::from),
             thinking: None,
             timestamp: Some(Utc::now().timestamp_millis()),
+            tool_calls: None,
+        }
+    }
+
+    pub fn assistant_with_tools(
+        content: impl Into<MessageContent>,
+        tool_calls: Vec<ToolUse>,
+        provider: Option<&str>,
+        model: Option<&str>,
+    ) -> Self {
+        Self {
+            role: Role::Assistant,
+            content: content.into(),
+            tool_call_id: None,
+            provider: provider.map(String::from),
+            model: model.map(String::from),
+            thinking: None,
+            timestamp: Some(Utc::now().timestamp_millis()),
+            tool_calls: Some(tool_calls),
         }
     }
 
@@ -168,10 +194,12 @@ impl Message {
         Self {
             role: Role::System,
             content: content.into(),
+            tool_call_id: None,
             provider: None,
             model: None,
             thinking: None,
             timestamp: Some(Utc::now().timestamp_millis()),
+            tool_calls: None,
         }
     }
 
@@ -179,10 +207,12 @@ impl Message {
         Self {
             role: Role::Tool,
             content: content.into(),
-            provider: Some(tool_use_id.to_string()),
+            tool_call_id: Some(tool_use_id.to_string()),
+            provider: None,
             model: None,
             thinking: None,
             timestamp: Some(Utc::now().timestamp_millis()),
+            tool_calls: None,
         }
     }
 }
@@ -242,19 +272,15 @@ pub struct ProviderConfig {
 /// Thinking level
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum ThinkingLevel {
     Off,
     Minimal,
     Low,
+    #[default]
     Medium,
     High,
     XHigh,
-}
-
-impl Default for ThinkingLevel {
-    fn default() -> Self {
-        Self::Medium
-    }
 }
 
 impl ThinkingLevel {
