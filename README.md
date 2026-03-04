@@ -1,5 +1,7 @@
 # Pi - AI 编程助手
 
+[English](README_EN.md) | 中文
+
 [![Rust](https://github.com/badlogic/pi-mono/actions/workflows/rust.yml/badge.svg)](https://github.com/badlogic/pi-mono/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
