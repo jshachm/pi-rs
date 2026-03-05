@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tools_tests {
-    use pi_rs::tools::{bash_tool, coding_tools, ls_tool, read_tool, write_tool};
+    use pi_rs::tools::{bash_tool, coding_tools, epkg_tool, ls_tool, read_tool, write_tool};
 
     #[test]
     fn test_read_tool_name() {
@@ -24,6 +24,19 @@ mod tools_tests {
     fn test_ls_tool_name() {
         let tool = ls_tool();
         assert_eq!(tool.name, "ls");
+    }
+
+    #[test]
+    fn test_epkg_tool_name() {
+        let tool = epkg_tool();
+        assert_eq!(tool.name, "epkg");
+    }
+
+    #[test]
+    fn test_epkg_tool_schema() {
+        let tool = epkg_tool();
+        assert_eq!(tool.schema.r#type, "object");
+        assert!(tool.schema.required.contains(&"command".to_string()));
     }
 
     #[test]

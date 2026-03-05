@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 pub mod bash;
 pub mod edit;
+pub mod epkg;
 pub mod find;
 pub mod grep;
 pub mod ls;
@@ -17,6 +18,7 @@ pub use tool::{Tool, ToolResult, ToolSchema, ToolTrait, ToolWrapper};
 
 pub use bash::bash_tool;
 pub use edit::edit_tool;
+pub use epkg::epkg_tool;
 pub use find::find_tool;
 pub use grep::grep_tool;
 pub use ls::ls_tool;
@@ -63,6 +65,7 @@ pub fn get_tool_by_name(name: &str) -> Option<Arc<dyn ToolTrait>> {
         "grep" => Some(Arc::new(ToolWrapper::from_tool(grep_tool()))),
         "find" => Some(Arc::new(ToolWrapper::from_tool(find_tool()))),
         "ls" => Some(Arc::new(ToolWrapper::from_tool(ls_tool()))),
+        "epkg" => Some(Arc::new(ToolWrapper::from_tool(epkg_tool()))),
         _ => None,
     }
 }

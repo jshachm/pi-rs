@@ -9,12 +9,29 @@
 ## 功能特性
 
 - **多提供商支持**：OpenAI、Anthropic、Google、Moonshot（月之暗面）、Ollama、Azure OpenAI、Mistral、Groq
-- **工具系统**：内置文件操作工具（read、write、edit、bash、grep、find、ls）
+- **工具系统**：内置文件操作工具（[read](#工具)、[write](#工具)、[edit](#工具)、[bash](#工具)、[grep](#工具)、[find](#工具)、[ls](#工具)、[epkg](#epkg-工具)）
 - **会话管理**：基于 JSONL 的树形结构，支持分支
 - **技能系统**：加载自定义技能以定制 AI 行为
-- **交互式 TUI**：使用 ratatui 构建的终端用户界面
+- **交互式 TUI**：使用 [ratatui](https://github.com/ratatui-org/ratatui) 构建的终端用户界面
 - **上下文压缩**：自动对长对话进行摘要
 - **扩展系统**：可扩展架构，支持添加自定义功能
+
+## 快速开始
+
+```bash
+# 克隆项目
+git clone https://github.com/yourusername/pi-rs.git
+cd pi-rs
+
+# 构建
+cargo build --release
+
+# 设置 API 键（以 Moonshot 为例）
+export MOONSHOT_API_KEY="your-api-key"
+
+# 运行
+./target/release/pi --model moonshot-v1-8k "你好，你会做什么？"
+```
 
 ## 安装
 
@@ -26,24 +43,9 @@ cd pi-rs
 cargo build --release
 ```
 
-### 二进制文件位置
-
-编译后的二进制文件位于 `target/release/pi`
+二进制文件位于 `target/release/pi`。
 
 ## 使用方法
-
-### 快速开始
-
-```bash
-# 设置 API 键（以 Moonshot 为例）
-export MOONSHOT_API_KEY="your-api-key"
-
-# 简单对话
-./target/release/pi --model moonshot-v1-8k "你好，你会做什么？"
-
-# 列出可用模型
-./target/release/pi --list-models
-```
 
 ### 命令行选项
 
@@ -82,14 +84,14 @@ pi [OPTIONS] [MESSAGE] [FILES]...
 ### 使用示例
 
 ```bash
-# 使用 Moonshot（月之暗面）对话
+# 列出可用模型
+./target/release/pi --list-models
+
+# 使用 Moonshot 对话
 ./target/release/pi --model moonshot-v1-8k "列出当前目录的文件"
 
-# 使用工具（bash、read、write、edit）
-./target/release/pi --model moonshot-v1-8k "读取 Cargo.toml 文件"
-
-# 使用自定义技能
-./target/release/pi --model moonshot-v1-8k --skill /path/to/skill "触发词"
+# 使用工具
+./target/release/pi --model moonshot-v1-8k --tools bash,read "读取 Cargo.toml 文件"
 
 # 继续之前的会话
 ./target/release/pi --continue
@@ -109,9 +111,36 @@ pi [OPTIONS] [MESSAGE] [FILES]...
 | `MISTRAL_API_KEY` | Mistral API 密钥 |
 | `GROQ_API_KEY` | Groq API 密钥 |
 
+## 工具
+
+| 工具 | 说明 |
+|------|------|
+| `read` | 从文件系统读取文件 |
+| `write` | 向文件系统写入文件 |
+| `edit` | 使用查找/替换编辑文件 |
+| `bash` | 执行 shell 命令 |
+| `grep` | 在文件中搜索模式 |
+| `find` | 按名称查找文件 |
+| `ls` | 列出目录内容 |
+| `epkg` | 多源软件包管理器 |
+
+### epkg 工具
+
+集成 [epkg](https://atomgits.com/openeuler/epkg) 多源软件包管理器，支持从多个 Linux 发行版安装软件包（RPM、DEB、Alpine、Arch、Conda）。
+
+```bash
+# 使用 epkg 搜索包
+./target/release/pi --tools epkg "搜索 vim 包"
+
+# 使用 epkg 安装包
+./target/release/pi --tools epkg "在 openeuler 环境安装 nginx"
+```
+
+支持的子命令：`install`, `remove`, `update`, `upgrade`, `search`, `info`, `list`, `env`, `run`, `history`, `restore`, `gc`, `repo`, `self`, `build`
+
 ## 技能系统
 
-技能允许你为特定任务定制 AI 的行为。
+技能允许你为特定任务定制 AI 的行为。详见 [skills](docs/skills.md)。
 
 ### 创建技能
 
@@ -133,6 +162,7 @@ my-skill/
 }
 ```
 
+<<<<<<< HEAD
 ### content.md
 
 包含系统提示词，当技能被触发时会预先添加到对话中。
@@ -227,8 +257,6 @@ cargo test skills
 
 ## 开发
 
-### 构建
-
 ```bash
 # 调试构建
 cargo build
@@ -236,13 +264,6 @@ cargo build
 # 发布构建
 cargo build --release
 
-# 带日志运行
-RUST_LOG=debug cargo run -- --model moonshot-v1-8k "你好"
-```
-
-### 代码质量
-
-```bash
 # 运行 clippy
 cargo clippy
 
@@ -252,74 +273,8 @@ cargo fmt
 
 ## 性能指标
 
-- **二进制大小**：6.8 MB
-- **运行时内存**：约 9.2-9.7 MB
-
-### 各功能运行时内存
-
-| 功能 | 内存占用 |
-|------|----------|
-| 简单对话 | 9.2 MB |
-| 工具调用 (bash) | 9.2 MB |
-| 工具调用 (read) | 9.2 MB |
-| 工具调用 (write) | 9.2 MB |
-| 工具调用 (edit) | 9.2 MB |
-| 工具调用 (grep) | 9.3 MB |
-| 工具调用 (find) | 9.3 MB |
-| 工具调用 (ls) | 9.3 MB |
-| 技能系统 | 9.2 MB |
-
-### 构建与测试
-
-- **测试套件内存**：约 63 MB
-- **测试目录大小**：1.1 GB（调试构建）
-- **测试覆盖**：107 个单元测试，30 个测试套件，全部通过
-
-### 功能测试结果
-
-| 功能 | 状态 | 备注 |
-|------|------|------|
-| 简单对话 | ✅ 通过 | Moonshot API 正常响应 |
-| 工具调用 (bash) | ✅ 通过 | 可执行 ls 等命令 |
-| 工具调用 (read) | ✅ 通过 | 可读取文件内容 |
-| 工具调用 (write) | ✅ 通过 | 可创建新文件 |
-| 工具调用 (edit) | ✅ 通过 | 可编辑文件内容 |
-| 工具调用 (grep) | ✅ 通过 | 可搜索文件内容 |
-| 工具调用 (find) | ✅ 通过 | 可查找文件 |
-| 工具调用 (ls) | ✅ 通过 | 可列出目录 |
-| 技能系统 | ✅ 通过 | 自定义技能正常工作 |
-| 多轮对话 | ✅ 通过 | 支持上下文记忆 |
-
-### 测试示例
-
-```bash
-# 简单对话
-$ ./target/release/pi --model moonshot-v1-8k "你好"
-=== Response ===
-你好！有什么可以帮助你的吗？
-
-# 工具调用 (bash)
-$ ./target/release/pi --model moonshot-v1-8k "用bash工具执行ls命令"
-=== Response ===
-执行`ls`命令后，当前目录下的文件和文件夹如下：
-- Cargo.lock
-- Cargo.toml
-- src
-- tests
-
-# 工具调用 (read)
-$ ./target/release/pi --model moonshot-v1-8k "读取 Cargo.toml 文件的前10行"
-=== Response ===
-Cargo.toml 文件的前10行内容如下：
-[package]
-name = "pi-rs"
-version = "0.1.0"
-
-# 技能系统
-$ ./target/release/pi --model moonshot-v1-8k --skill /path/to/skill "trigger"
-=== Response ===
-Skill is working!
-```
+- **二进制大小**：~8 MB
+- **运行时内存**：约 9 MB
 
 ## 许可证
 

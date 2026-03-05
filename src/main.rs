@@ -151,10 +151,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or_else(|| format!("Provider not found: {}", provider_name))?;
 
         // Get tools for the agent
-        let tools_arc: Vec<Arc<dyn tools::ToolTrait>> = coding_tools()
-            .into_iter()
-            .map(|t| Arc::new(ToolWrapper::from_tool(t)) as Arc<dyn tools::ToolTrait>)
-            .collect();
+        let tools_arc: Vec<Arc<dyn tools::ToolTrait>> = if let Some(ref tools_str) = args.tools {
+            let tool_names: Vec<&str> = tools_str.split(',').map(|s| s.trim()).collect();
+            let mut selected: Vec<tools::Tool> = vec![];
+            for name in tool_names {
+                match name {
+                    "read" => selected.push(tools::read_tool()),
+                    "write" => selected.push(tools::write_tool()),
+                    "edit" => selected.push(tools::edit_tool()),
+                    "bash" => selected.push(tools::bash_tool()),
+                    "grep" => selected.push(tools::grep_tool()),
+                    "find" => selected.push(tools::find_tool()),
+                    "ls" => selected.push(tools::ls_tool()),
+                    "epkg" => selected.push(tools::epkg_tool()),
+                    _ => eprintln!("Unknown tool: {}", name),
+                }
+            }
+            selected
+        } else {
+            coding_tools()
+        }
+        .into_iter()
+        .map(|t| Arc::new(ToolWrapper::from_tool(t)) as Arc<dyn tools::ToolTrait>)
+        .collect();
 
         // Load skills if enabled
         let mut skill_loader = SkillLoader::new(PathBuf::from("."));
@@ -224,6 +243,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "grep" => selected.push(tools::grep_tool()),
                 "find" => selected.push(tools::find_tool()),
                 "ls" => selected.push(tools::ls_tool()),
+                "epkg" => selected.push(tools::epkg_tool()),
                 _ => eprintln!("Unknown tool: {}", name),
             }
         }
