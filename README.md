@@ -70,6 +70,11 @@ pi [OPTIONS] [MESSAGE] [FILES]...
       --skill <路径>         从路径加载技能
       --theme <路径>         加载主题
   -p, --print               打印模式（非交互式）
+      --sandbox <路径>        启用沙箱模式（必需指定项目路径）
+      --sandbox-mount <路径>  沙箱额外挂载目录（需要 --sandbox）
+      --sandbox-env <变量>   沙箱环境变量（格式：KEY=VALUE，需要 --sandbox）
+      --sandbox-type <类型>  沙箱类型（默认：epkg）
+      --no-sandbox           禁用沙箱（覆盖配置文件）
   -h, --help               打印帮助信息
   -V, --version            打印版本信息
 ```
@@ -134,8 +139,6 @@ my-skill/
 
 ## 工具
 
-默认提供以下工具：
-
 | 工具 | 说明 |
 |------|------|
 | `read` | 从文件系统读取文件 |
@@ -145,6 +148,52 @@ my-skill/
 | `grep` | 在文件中搜索模式 |
 | `find` | 按名称查找文件 |
 | `ls` | 列出目录内容 |
+
+### epkg 工具
+
+集成 [epkg](https://atomgits.com/openeuler/epkg) 多源软件包管理器。
+
+### 沙箱模式
+
+支持在隔离的沙箱环境中运行，保护主机系统。
+
+```bash
+# 启用沙箱（必需指定项目路径）
+pi-rs --sandbox /my/project
+
+# 带额外挂载目录（类似 docker -v）
+pi-rs --sandbox /my/project -v /opt/epkg -v /data
+
+# 带环境变量
+pi-rs --sandbox /my/project -e CUSTOM_VAR=value
+
+# 指定沙箱类型（默认：epkg）
+pi-rs --sandbox /my/project --sandbox-type epkg
+
+# 禁用沙箱（覆盖配置文件）
+pi-rs --sandbox /my/project --no-sandbox
+```
+
+#### 配置文件
+
+在项目目录创建 `.pi/sandbox.json`：
+
+```json
+{
+  "enabled": true,
+  "type": "epkg",
+  "mounts": ["/opt/epkg", "/data"],
+  "env": {
+    "CUSTOM_VAR": "value"
+  }
+}
+```
+
+#### 环境变量
+
+沙箱内自动继承以下环境变量：
+- `MOONSHOT_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
+- `GOOGLE_API_KEY`, `OLLAMA_BASE_URL`, 等
 
 ## 项目结构
 
