@@ -59,17 +59,22 @@ Options:
   -r, --resume               Resume/select a session
       --session <PATH>        Use specified session file
       --no-session           No session (temporary mode)
-      --provider <NAME>       Provider name (openai, anthropic, moonshot, etc.)
-      --model <MODEL>         Model name or pattern
-      --thinking <LEVEL>       Thinking level (off, minimal, low, medium, high, xhigh)
-      --api-key <KEY>         API key
+      --provider <NAME>      Provider name (openai, anthropic, moonshot, etc.)
+      --model <MODEL>        Model name or pattern
+      --thinking <LEVEL>      Thinking level (off, minimal, low, medium, high, xhigh)
+      --api-key <KEY>        API key
       --list-models           List available models
       --tools <TOOLS>         Enable specific tools (comma-separated)
       --no-tools             Disable all built-in tools
-  -e, --extension <PATH>   Load extension from path
+  -e, --extension <PATH>     Load extension from path
       --skill <PATH>         Load skill from path
       --theme <PATH>         Load theme
   -p, --print               Print mode (non-interactive)
+      --sandbox <PATH>        Enable sandbox mode (project path required)
+      --sandbox-mount <PATH>  Additional mount paths (requires --sandbox)
+      --sandbox-env <VAR>     Sandbox env vars (format: KEY=VALUE, requires --sandbox)
+      --sandbox-type <TYPE>  Sandbox type (default: epkg)
+      --no-sandbox           Disable sandbox (override config file)
   -h, --help               Print help
   -V, --version            Print version
 ```
@@ -145,6 +150,52 @@ The following tools are provided by default:
 | `grep` | Search for patterns in files |
 | `find` | Find files by name |
 | `ls` | List directory contents |
+
+### epkg Tool
+
+Integrates [epkg](https://atomgits.com/openeuler/epkg) multi-source package manager.
+
+### Sandbox Mode
+
+Run in an isolated sandbox environment to protect the host system.
+
+```bash
+# Enable sandbox (project path required)
+pi-rs --sandbox /my/project
+
+# With additional mounts (like docker -v)
+pi-rs --sandbox /my/project -v /opt/epkg -v /data
+
+# With environment variables
+pi-rs --sandbox /my/project -e CUSTOM_VAR=value
+
+# Specify sandbox type (default: epkg)
+pi-rs --sandbox /my/project --sandbox-type epkg
+
+# Disable sandbox (override config file)
+pi-rs --sandbox /my/project --no-sandbox
+```
+
+#### Configuration File
+
+Create `.pi/sandbox.json` in project directory:
+
+```json
+{
+  "enabled": true,
+  "type": "epkg",
+  "mounts": ["/opt/epkg", "/data"],
+  "env": {
+    "CUSTOM_VAR": "value"
+  }
+}
+```
+
+#### Environment Variables
+
+The following environment variables are automatically propagated into sandbox:
+- `MOONSHOT_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
+- `GOOGLE_API_KEY`, `OLLAMA_BASE_URL`, etc.
 
 ## Project Structure
 
