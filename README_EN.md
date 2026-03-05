@@ -240,6 +240,7 @@ pi-rs/
 │   ├── agent/            # Agent core logic
 │   ├── tui/              # Terminal UI
 │   ├── skills/           # Skill system
+│   ├── sandbox/          # Sandbox module
 │   ├── prompts/          # Prompt templates
 │   ├── compaction/       # Context compaction
 │   └── extensions/       # Extension system

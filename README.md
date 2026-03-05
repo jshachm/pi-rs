@@ -238,6 +238,7 @@ pi-rs/
 │   ├── agent/            # 助手核心逻辑
 │   ├── tui/              # 终端 UI
 │   ├── skills/           # 技能系统
+│   ├── sandbox/          # 沙箱模块
 │   ├── prompts/          # 提示词模板
 │   ├── compaction/       # 上下文压缩
 │   └── extensions/       # 扩展系统
