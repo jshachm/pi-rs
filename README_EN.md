@@ -9,12 +9,29 @@ A terminal AI coding assistant written in Rust, inspired by [pi-coding-agent](ht
 ## Features
 
 - **Multi-Provider Support**: OpenAI, Anthropic, Google, Moonshot, Ollama, Azure OpenAI, Mistral, Groq
-- **Tool System**: Built-in file operation tools (read, write, edit, bash, grep, find, ls)
+- **Tool System**: Built-in file operation tools ([read](#tools), [write](#tools), [edit](#tools), [bash](#tools), [grep](#tools), [find](#tools), [ls](#tools), [epkg](#epkg-tool))
 - **Session Management**: JSONL-based tree structure with branching support
 - **Skill System**: Load custom skills to customize AI behavior
-- **Interactive TUI**: Terminal user interface built with ratatui
+- **Interactive TUI**: Terminal user interface built with [ratatui](https://github.com/ratatui-org/ratatui)
 - **Context Compaction**: Automatic summarization for long conversations
 - **Extension System**: Extensible architecture for adding custom features
+
+## Quick Start
+
+```bash
+# Clone project
+git clone https://github.com/yourusername/pi-rs.git
+cd pi-rs
+
+# Build
+cargo build --release
+
+# Set API key (using Moonshot as example)
+export MOONSHOT_API_KEY="your-api-key"
+
+# Run
+./target/release/pi --model moonshot-v1-8k "Hello, what can you do?"
+```
 
 ## Installation
 
@@ -26,24 +43,9 @@ cd pi-rs
 cargo build --release
 ```
 
-### Binary Location
-
-The compiled binary is located at `target/release/pi`
+Binary is located at `target/release/pi`.
 
 ## Usage
-
-### Quick Start
-
-```bash
-# Set API key (using Moonshot as example)
-export MOONSHOT_API_KEY="your-api-key"
-
-# Simple conversation
-./target/release/pi --model moonshot-v1-8k "Hello, what can you do?"
-
-# List available models
-./target/release/pi --list-models
-```
 
 ### Command Line Options
 
@@ -59,14 +61,14 @@ Options:
   -r, --resume               Resume/select a session
       --session <PATH>        Use specified session file
       --no-session           No session (temporary mode)
-      --provider <NAME>       Provider name (openai, anthropic, moonshot, etc.)
-      --model <MODEL>         Model name or pattern
-      --thinking <LEVEL>       Thinking level (off, minimal, low, medium, high, xhigh)
-      --api-key <KEY>         API key
+      --provider <NAME>      Provider name (openai, anthropic, moonshot, etc.)
+      --model <MODEL>        Model name or pattern
+      --thinking <LEVEL>      Thinking level (off, minimal, low, medium, high, xhigh)
+      --api-key <KEY>        API key
       --list-models           List available models
       --tools <TOOLS>         Enable specific tools (comma-separated)
       --no-tools             Disable all built-in tools
-  -e, --extension <PATH>   Load extension from path
+  -e, --extension <PATH>     Load extension from path
       --skill <PATH>         Load skill from path
       --theme <PATH>         Load theme
   -p, --print               Print mode (non-interactive)
@@ -77,14 +79,14 @@ Options:
 ### Usage Examples
 
 ```bash
+# List available models
+./target/release/pi --list-models
+
 # Chat with Moonshot
 ./target/release/pi --model moonshot-v1-8k "List files in current directory"
 
-# Use tools (bash, read, write, edit)
-./target/release/pi --model moonshot-v1-8k "Read the Cargo.toml file"
-
-# Use custom skills
-./target/release/pi --model moonshot-v1-8k --skill /path/to/skill "trigger word"
+# Use tools
+./target/release/pi --model moonshot-v1-8k --tools bash,read "Read the Cargo.toml file"
 
 # Continue previous session
 ./target/release/pi --continue
@@ -104,9 +106,36 @@ Options:
 | `MISTRAL_API_KEY` | Mistral API key |
 | `GROQ_API_KEY` | Groq API key |
 
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| `read` | Read files from the file system |
+| `write` | Write files to the file system |
+| `edit` | Edit files using find/replace |
+| `bash` | Execute shell commands |
+| `grep` | Search for patterns in files |
+| `find` | Find files by name |
+| `ls` | List directory contents |
+| `epkg` | Multi-source package manager |
+
+### epkg Tool
+
+Integrates [epkg](https://atomgits.com/openeuler/epkg) - a multi-source package manager for Linux, supporting packages from multiple distributions (RPM, DEB, Alpine, Arch, Conda).
+
+```bash
+# Search packages with epkg
+./target/release/pi --tools epkg "Search for vim package"
+
+# Install packages with epkg
+./target/release/pi --tools epkg "Install nginx in openeuler environment"
+```
+
+Supported subcommands: `install`, `remove`, `update`, `upgrade`, `search`, `info`, `list`, `env`, `run`, `history`, `restore`, `gc`, `repo`, `self`, `build`
+
 ## Skill System
 
-Skills allow you to customize the AI's behavior for specific tasks.
+Skills allow you to customize the AI's behavior for specific tasks. See [skills](docs/skills.md) for details.
 
 ### Creating a Skill
 
@@ -127,24 +156,6 @@ my-skill/
   "variables": []
 }
 ```
-
-### content.md
-
-Contains the system prompt that is prepended to the conversation when the skill is triggered.
-
-## Tools
-
-The following tools are provided by default:
-
-| Tool | Description |
-|------|-------------|
-| `read` | Read files from the file system |
-| `write` | Write files to the file system |
-| `edit` | Edit files using find/replace |
-| `bash` | Execute shell commands |
-| `grep` | Search for patterns in files |
-| `find` | Find files by name |
-| `ls` | List directory contents |
 
 ## Project Structure
 
@@ -178,8 +189,6 @@ cargo test skills
 
 ## Development
 
-### Building
-
 ```bash
 # Debug build
 cargo build
@@ -187,13 +196,6 @@ cargo build
 # Release build
 cargo build --release
 
-# Run with logging
-RUST_LOG=debug cargo run -- --model moonshot-v1-8k "Hello"
-```
-
-### Code Quality
-
-```bash
 # Run clippy
 cargo clippy
 
@@ -203,74 +205,8 @@ cargo fmt
 
 ## Performance Metrics
 
-- **Binary Size**: 6.8 MB
-- **Runtime Memory**: ~9.2-9.7 MB
-
-### Runtime Memory by Feature
-
-| Feature | Memory Usage |
-|---------|-------------|
-| Simple chat | 9.2 MB |
-| Tool call (bash) | 9.2 MB |
-| Tool call (read) | 9.2 MB |
-| Tool call (write) | 9.2 MB |
-| Tool call (edit) | 9.2 MB |
-| Tool call (grep) | 9.3 MB |
-| Tool call (find) | 9.3 MB |
-| Tool call (ls) | 9.3 MB |
-| Skill system | 9.2 MB |
-
-### Build & Test
-
-- **Test Suite Memory**: ~63 MB
-- **Test Directory Size**: 1.1 GB (debug build)
-- **Test Coverage**: 107 unit tests, 30 test suites, all passing
-
-### Functional Test Results
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Simple chat | ✅ Pass | Moonshot API responds normally |
-| Tool call (bash) | ✅ Pass | Can execute ls and other commands |
-| Tool call (read) | ✅ Pass | Can read file contents |
-| Tool call (write) | ✅ Pass | Can create new files |
-| Tool call (edit) | ✅ Pass | Can edit file contents |
-| Tool call (grep) | ✅ Pass | Can search file contents |
-| Tool call (find) | ✅ Pass | Can find files |
-| Tool call (ls) | ✅ Pass | Can list directories |
-| Skill system | ✅ Pass | Custom skills work correctly |
-| Multi-turn chat | ✅ Pass | Supports context memory |
-
-### Test Examples
-
-```bash
-# Simple chat
-$ ./target/release/pi --model moonshot-v1-8k "Hello"
-=== Response ===
-Hello! How can I help you?
-
-# Tool call (bash)
-$ ./target/release/pi --model moonshot-v1-8k "Execute ls command using bash tool"
-=== Response ===
-After executing the `ls` command, the files and folders in the current directory are:
-- Cargo.lock
-- Cargo.toml
-- src
-- tests
-
-# Tool call (read)
-$ ./target/release/pi --model moonshot-v1-8k "Read the first 10 lines of Cargo.toml"
-=== Response ===
-The first 10 lines of Cargo.toml are:
-[package]
-name = "pi-rs"
-version = "0.1.0"
-
-# Skill system
-$ ./target/release/pi --model moonshot-v1-8k --skill /path/to/skill "trigger"
-=== Response ===
-Skill is working!
-```
+- **Binary Size**: ~8 MB
+- **Runtime Memory**: ~9 MB
 
 ## License
 
