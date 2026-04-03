@@ -24,6 +24,8 @@ use session::SessionManager;
 use tools::{coding_tools, Tool};
 use tools::ToolWrapper;
 use providers::ModelRegistry;
+use std::collections::HashMap;
+use providers::ProviderOverride;
 use agent::AgentSession;
 use agent::session::AgentConfig;
 use skills::SkillLoader;
@@ -113,8 +115,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         SessionManager::create(&cwd, None)
     };
 
-    // Initialize model registry
-    let model_registry = Arc::new(ModelRegistry::new());
+    // Initialize model registry with CLI overrides
+    let mut overrides: HashMap<String, ProviderOverride> = HashMap::new();
+
+    // If --provider is specified, apply CLI overrides only to that provider
+    let target_provider = args.provider.as_deref();
+    let apply_override = |name: &str| -> bool {
+        target_provider.map_or(true, |t| t == name)
+    };
+
+    if apply_override("openai") && args.api_key.is_some() {
+        overrides.entry("openai".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("openai") && args.base_url.is_some() {
+        overrides.entry("openai".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("anthropic") && args.api_key.is_some() {
+        overrides.entry("anthropic".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("anthropic") && args.base_url.is_some() {
+        overrides.entry("anthropic".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("google") && args.api_key.is_some() {
+        overrides.entry("google".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("google") && args.base_url.is_some() {
+        overrides.entry("google".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("moonshot") && args.api_key.is_some() {
+        overrides.entry("moonshot".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("moonshot") && args.base_url.is_some() {
+        overrides.entry("moonshot".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("mistral") && args.api_key.is_some() {
+        overrides.entry("mistral".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("mistral") && args.base_url.is_some() {
+        overrides.entry("mistral".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("groq") && args.api_key.is_some() {
+        overrides.entry("groq".to_string()).or_default().api_key = args.api_key.clone();
+    }
+    if apply_override("groq") && args.base_url.is_some() {
+        overrides.entry("groq".to_string()).or_default().base_url = args.base_url.clone();
+    }
+    if apply_override("ollama") && args.base_url.is_some() {
+        overrides.entry("ollama".to_string()).or_default().base_url = args.base_url.clone();
+    }
+
+    let model_registry = Arc::new(ModelRegistry::new_with_overrides(overrides));
 
     // List models if requested
     if args.list_models {

@@ -20,9 +20,13 @@ pub struct MoonshotProvider {
 
 impl MoonshotProvider {
     pub fn new(api_key: impl Into<String>) -> Self {
+        Self::with_base_url(api_key, "https://api.moonshot.cn/v1")
+    }
+
+    pub fn with_base_url(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),
-            base_url: "https://api.moonshot.cn/v1".to_string(),
+            base_url: base_url.into(),
             client: Client::new(),
             models: vec![
                 Model {

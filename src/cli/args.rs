@@ -47,6 +47,10 @@ pub struct Args {
     #[arg(long = "api-key")]
     pub api_key: Option<String>,
 
+    /// Base URL for provider API (overrides default)
+    #[arg(long = "base-url", value_name = "URL")]
+    pub base_url: Option<String>,
+
     /// List available models
     #[arg(long = "list-models")]
     pub list_models: bool,

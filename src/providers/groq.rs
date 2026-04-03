@@ -12,14 +12,20 @@ use crate::providers::provider::{Provider, ProviderChoice, ProviderError, Provid
 
 pub struct GroqProvider {
     api_key: String,
+    base_url: String,
     client: Client,
     models: Vec<Model>,
 }
 
 impl GroqProvider {
     pub fn new(api_key: impl Into<String>) -> Self {
+        Self::with_base_url(api_key, "https://api.groq.com")
+    }
+
+    pub fn with_base_url(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),
+            base_url: base_url.into(),
             client: Client::new(),
             models: vec![
                 Model {
@@ -119,7 +125,7 @@ impl Provider for GroqProvider {
         tools: Option<Vec<serde_json::Value>>,
         thinking: Option<bool>,
     ) -> Result<ProviderResponse, ProviderError> {
-        let url = "https://api.groq.com/openai/v1/chat/completions";
+        let url = format!("{}/openai/v1/chat/completions", self.base_url);
 
         let mut request_body = serde_json::json!({
             "model": model,
