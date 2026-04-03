@@ -22,4 +22,4 @@ pub use ollama::OllamaProvider;
 pub use azure::AzureProvider;
 pub use mistral::MistralProvider;
 pub use groq::GroqProvider;
-pub use registry::ModelRegistry;
+pub use registry::{ModelRegistry, ProviderOverride};
